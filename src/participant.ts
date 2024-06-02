@@ -99,7 +99,7 @@ export class Dealer implements IDealer {
   private extractSecretShareInternal(share: Share): DecryptedShare | null {
     // Decryption of the shares
     // Using its private key x_i, each participant finds the decrypted share S_i from Y_i by computing S_i = Y_i·(1/x_i mod N).
-    const privateInverse = this.modInverse(BigInt(`0x${Buffer.from(this.privateKey).toString('hex')}`), theCurveN);
+    const privateInverse = modInverse(BigInt(`0x${Buffer.from(this.privateKey).toString('hex')}`), theCurveN);
 
     const { x: six, y: siy } = share.S.multiply(privateInverse);
 
@@ -119,26 +119,6 @@ export class Dealer implements IDealer {
     };
   }
 
-  private modInverse(a: bigint, n: bigint): bigint {
-    let t = BigInt(0);
-    let newT = BigInt(1);
-    let r = n;
-    let newR = a;
-
-    while (newR !== BigInt(0)) {
-      const quotient = r / newR;
-      [t, newT] = [newT, t - quotient * newT];
-      [r, newR] = [newR, r - quotient * newR];
-    }
-
-    if (r > BigInt(1)) {
-      throw new Error('a is not invertible');
-    }
-    if (t < BigInt(0)) {
-      t = t + n;
-    }
-    return t;
-  }
 
   private arraysEqual(a: Uint8Array, b: Uint8Array): boolean {
     if (a.length !== b.length) return false;
@@ -200,4 +180,83 @@ export function VerifyDecryptedShare(decShare: DecryptedShare): boolean {
     decShare.challenge,
     decShare.response
   )
+}
+
+export function ReconstructSecret(decShares: DecryptedShare[], u: bigint): bigint {
+  const bigjs = new Map<number, bigint>();
+  for (const ds of decShares) {
+    bigjs.set(ds.Position, BigInt(ds.Position));
+  }
+
+  // Initialize the sum to zero point
+  let sum = theCurve.ProjectivePoint.ZERO;
+
+  for (const ds of decShares) {
+    // λ_i
+    const lambda = lagrangeCoefficient(ds.Position, bigjs);
+
+    const S = theCurve.ProjectivePoint.fromAffine({ x: ds.S.x, y: ds.S.y });
+
+    const lambdaS = S.multiply(lambda); // Multiply point by scalar
+
+    sum = sum.add(lambdaS); // Add the scaled point to the sum
+  }
+
+  // Compute sGx and sGy from the sum
+  const sGx = sum.x;
+  const sGy = sum.y;
+
+  // Compute the hash of the sum of points
+  const hash256 = sha3_256.create();
+  hash256.update(bigIntToBytes(sGx));
+  hash256.update(bigIntToBytes(sGy));
+  const hashBytes = hash256.digest();
+  const hashBigInt = BigInt('0x' + Buffer.from(hashBytes).toString('hex'));
+
+  // Compute the secret using XOR operation
+  const secret = u ^ hashBigInt;
+
+  return secret;
+}
+
+
+// Function to compute Lagrange coefficient
+function lagrangeCoefficient(i: number, bigjs: Map<number, bigint>): bigint {
+  let numerator = BigInt(1);
+  let denominator = BigInt(1);
+  const bi = BigInt(i);
+
+  for (const [j, bj] of bigjs.entries()) {
+    if (j !== i) {
+      numerator = (numerator * bj) % theCurveN;
+      const jsubi = (bj - bi + theCurveN) % theCurveN;
+      denominator = (denominator * jsubi) % theCurveN;
+    }
+  }
+
+  const inverseDenom = modInverse(denominator, theCurveN);
+  const lambda = (numerator * inverseDenom) % theCurveN;
+  return lambda;
+}
+
+// Function to compute modular inverse
+function modInverse(a: bigint, n: bigint): bigint {
+  let t = BigInt(0);
+  let newT = BigInt(1);
+  let r = n;
+  let newR = a;
+
+  while (newR !== BigInt(0)) {
+    const quotient = r / newR;
+    [t, newT] = [newT, t - quotient * newT];
+    [r, newR] = [newR, r - quotient * newR];
+  }
+
+  if (r > BigInt(1)) {
+    throw new Error('a is not invertible');
+  }
+  if (t < BigInt(0)) {
+    t = t + n;
+  }
+  return t;
 }

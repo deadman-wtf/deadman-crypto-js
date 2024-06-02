@@ -4,7 +4,7 @@ import { G1, G2, Hx, Hy, theCurveN } from "../src/params";
 import { bigIntFromUint8Array, getRandomBigInt } from "../src/util";
 import { sha3_256 } from "@noble/hashes/sha3";
 import { Point } from "../src/types";
-import { Dealer, VerifyDecryptedShare, verifyDistributionShares } from "../src/participant";
+import { Dealer, ReconstructSecret, VerifyDecryptedShare, verifyDistributionShares } from "../src/participant";
 
 test('participant::PVSS', () => {
   const threshold = 3;
@@ -21,8 +21,8 @@ test('participant::PVSS', () => {
     pks.push(participant.pk)
   }
 
-  let secret = BigInt("33011033");
-  dealer.distributeSecret(secret, pks, threshold)
+  let s = BigInt("33011033");
+  dealer.distributeSecret(s, pks, threshold)
     .then((secret) => {
       console.log("Distributed secret:", secret)
       expect(n).toEqual(secret.Shares.length)
@@ -43,5 +43,9 @@ test('participant::PVSS', () => {
         const ok = VerifyDecryptedShare(decShares[i]);
         expect(ok).toBeTruthy();
       }
+
+      const sReconstructed = ReconstructSecret([decShares[0], decShares[1], decShares[3]], secret.U)
+      expect(sReconstructed).not.toBeNull();
+      expect(sReconstructed).toEqual(s)
     })
 });
