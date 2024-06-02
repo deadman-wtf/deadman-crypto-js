@@ -1,11 +1,3 @@
-import { p256 } from "@noble/curves/p256"
-import { Keccak, sha3_256 } from '@noble/hashes/sha3';
-import { hkdf } from '@noble/hashes/hkdf';
-import * as mod from '@noble/curves/abstract/modular';
-import { Hash } from "@noble/hashes/utils";
-
-declare const Buffer;
-
 export const randomString = (length: number) => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
@@ -16,7 +8,7 @@ export const randomString = (length: number) => {
 }
 
 export function bigIntToBytes(bigint: bigint): Uint8Array {
-  let hexString = bigint.toString(16);
+  const hexString = bigint.toString(16);
   const bytes = new Uint8Array(hexString.length / 2);
 
   for (let i = 0; i < hexString.length / 2; i++) {

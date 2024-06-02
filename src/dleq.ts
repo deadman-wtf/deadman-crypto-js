@@ -1,9 +1,6 @@
-import { p256 } from '@noble/curves/p256';
-import { sha256 } from '@noble/hashes/sha256';
-import { Hash, randomBytes } from '@noble/hashes/utils';
-import { DistributionSharesBox, Point } from './types';
-import { Hx, Hy, theCurve, theCurveN } from './params';
-import { Keccak, sha3_256 } from '@noble/hashes/sha3';
+import { Point } from './types';
+import { theCurveN } from './params';
+import { sha3_256 } from '@noble/hashes/sha3';
 import { bigIntToBytes } from './util';
 
 // DLEQ class implementing the protocol
@@ -39,7 +36,7 @@ export class DLEQ {
 
     static hash(...inputs: bigint[]): Uint8Array {
         const hasher = sha3_256.create();
-        for (let input of inputs) {
+        for (const input of inputs) {
           hasher.update(bigIntToBytes(input));
         }
         return hasher.digest();
@@ -47,7 +44,7 @@ export class DLEQ {
 
     static hashMod(n: bigint, ...values: bigint[]) {
       const hash256 = DLEQ.hash(...values);
-      let h = BigInt("0x" + Buffer.from(hash256).toString('hex'));
+      const h = BigInt("0x" + Buffer.from(hash256).toString('hex'));
       return h % n;
     }
 
@@ -65,7 +62,6 @@ export class DLEQ {
         const A2 = this.G2.multiply(this.w);
 
         // c := Hash(H1,H2,A1,A2) mod n
-        const hasher = sha3_256.create();
         const c = DLEQ.hashMod(this.H1.x, this.H1.y, this.H2.x, this.H2.y, A1.x, A1.y, A2.x, A2.y);
 
         if (c <= 0n || c >= n) throw new Error('c must be in the range 0 < c < n');

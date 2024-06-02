@@ -31,7 +31,7 @@ export class Dealer implements IDealer {
 
     const poly = new Polynomial(threshold-1, theCurveN);
     const shares: Share[] = [];
-    for (var i = 0; i < pks.length; i++) {
+    for (let i = 0; i < pks.length; i++) {
       shares.push({
         pk: pks[i],
         position: i + 1
@@ -42,7 +42,6 @@ export class Dealer implements IDealer {
 
   async distribute(secret: bigint, shares: Share[], threshold: number, poly: Polynomial): Promise<DistributionSharesBox> {
     const commitments: Point[] = [];
-    const G = G1;
     const H = new Point(Hx, Hy);
     const hasher = sha3_256.create();
 

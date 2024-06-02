@@ -1,9 +1,4 @@
 import { p256 } from "@noble/curves/p256";
-import { DLEQ } from "../src/dleq"
-import { G1, G2, Hx, Hy, theCurveN } from "../src/params";
-import { bigIntFromUint8Array, getRandomBigInt } from "../src/util";
-import { sha3_256 } from "@noble/hashes/sha3";
-import { Point } from "../src/types";
 import { Dealer, ReconstructSecret, VerifyDecryptedShare, verifyDistributionShares } from "../src/participant";
 
 test('participant::PVSS', () => {
@@ -21,7 +16,7 @@ test('participant::PVSS', () => {
     pks.push(participant.pk)
   }
 
-  let s = BigInt("33011033");
+  const s = BigInt("33011033");
   dealer.distributeSecret(s, pks, threshold)
     .then((secret) => {
       console.log("Distributed secret:", secret)
@@ -32,14 +27,14 @@ test('participant::PVSS', () => {
       expect(isVerified).toBeTruthy();
 
       const decShares = [];
-      for (var i = 0; i < participants.length; i++) {
+      for (let i = 0; i < participants.length; i++) {
         const decShare = participants.at(i).extractSecretShare(secret);
         expect(decShare).not.toBeNull();
         console.log(decShare);
         decShares.push(decShare);
       }
 
-      for (var i = 0; i < decShares.length; i++) {
+      for (let i = 0; i < decShares.length; i++) {
         const ok = VerifyDecryptedShare(decShares[i]);
         expect(ok).toBeTruthy();
       }
