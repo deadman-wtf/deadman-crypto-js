@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "esnext",
+    "declaration": true,
+    "outDir": "./dist",
+    "types": ["jest", "node"]
+  },
+  "include": [
+    "./tests/*.test.ts",
+    "src/**/*"
+  ]
+}
