@@ -29,3 +29,25 @@ export class Point {
     }
 }
 
+export interface Share {
+  pk: Uint8Array;
+  position: number;
+  S?: Point;
+  challenge?: bigint;
+  response?: bigint;
+}
+
+export interface DistributionSharesBox {
+  Commitments: Point[];
+  Shares: Share[];
+  U: bigint;
+}
+
+export interface DecryptedShare {
+  PK: Uint8Array;
+  Position: number;
+  S: Point;           // Decrypted share point
+  Y: Point;           // Proof value
+  challenge: bigint;  // DLEQ challenge
+  response: bigint;   // DLEQ response
+}

@@ -52,16 +52,3 @@ export function getRandomBigInt(maxValue: bigint): bigint {
   return randomValue;
 }
 
-export const hash = (hasher: Hash<Keccak>, ...values: bigint[]): Uint8Array => {
-  values.forEach((val) => {
-    hasher.update(Buffer.from(bigIntToBytes(val)));
-  })
-  return Buffer.from(hasher.digest()).toString('hex');
-}
-
-export const hashMod = (n: bigint, hasher: Hash<Keccak>, ...values: bigint[]): bigint => {
-  const hash256 = hash(hasher, ...values);
-  const h = BigInt("0x" + hash256) % n;
-  return h;
-}
-
