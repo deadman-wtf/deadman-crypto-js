@@ -4,7 +4,7 @@ import { G1, G2, Hx, Hy, theCurveN } from "../src/params";
 import { bigIntFromUint8Array, getRandomBigInt } from "../src/util";
 import { sha3_256 } from "@noble/hashes/sha3";
 import { Point } from "../src/types";
-import { Dealer, verifyDistributionShares } from "../src/participant";
+import { Dealer, VerifyDecryptedShare, verifyDistributionShares } from "../src/participant";
 
 test('participant::PVSS', () => {
   const threshold = 3;
@@ -28,6 +28,20 @@ test('participant::PVSS', () => {
       expect(n).toEqual(secret.Shares.length)
       expect(secret.U).not.toEqual(0n)
       expect(secret.Commitments.length).toEqual(threshold)
-      expect(verifyDistributionShares(secret)).toBeTruthy()
+      const isVerified = verifyDistributionShares(secret);
+      expect(isVerified).toBeTruthy();
+
+      const decShares = [];
+      for (var i = 0; i < participants.length; i++) {
+        const decShare = participants.at(i).extractSecretShare(secret);
+        expect(decShare).not.toBeNull();
+        console.log(decShare);
+        decShares.push(decShare);
+      }
+
+      for (var i = 0; i < decShares.length; i++) {
+        const ok = VerifyDecryptedShare(decShares[i]);
+        expect(ok).toBeTruthy();
+      }
     })
 });

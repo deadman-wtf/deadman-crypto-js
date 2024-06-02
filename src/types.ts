@@ -42,3 +42,12 @@ export interface DistributionSharesBox {
   Shares: Share[];
   U: bigint;
 }
+
+export interface DecryptedShare {
+  PK: Uint8Array;
+  Position: number;
+  S: Point;           // Decrypted share point
+  Y: Point;           // Proof value
+  challenge: bigint;  // DLEQ challenge
+  response: bigint;   // DLEQ response
+}
