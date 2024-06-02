@@ -1,8 +1,9 @@
 import { p256 } from '@noble/curves/p256';
 import { sha256 } from '@noble/hashes/sha256';
 import { randomBytes } from '@noble/hashes/utils';
-import { Point } from './types';
-import { theCurveN } from './params';
+import { DistributionSharesBox, Point } from './types';
+import { Hx, Hy, theCurve, theCurveN } from './params';
+import { sha3_256 } from '@noble/hashes/sha3';
 
 // DLEQ class implementing the protocol
 export class DLEQ {
@@ -15,7 +16,7 @@ export class DLEQ {
     r: bigint | null;
 
     constructor(G1: Point, G2: Point, w: bigint, alpha: bigint) {
-        const n = p256.CURVE.n;
+        const n = theCurveN;
 
         if (w <= 0n || w >= n) throw new Error('w must be in the range 0 < w < curveN');
         if (alpha <= 0n || alpha >= n) throw new Error('alpha must be in the range 0 < alpha < curveN');
@@ -83,4 +84,3 @@ export class DLEQ {
         return localChallenge === c;
     }
 }
-
