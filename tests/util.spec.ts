@@ -1,5 +1,4 @@
 import { bigIntFromUint8Array, bigIntToBytes } from "../src/util";
-import { sha3_256 } from "@noble/hashes/sha3";
 
 test('util::bigIntFromUint8Array', () => {});
 

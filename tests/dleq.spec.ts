@@ -2,8 +2,6 @@ import { p256 } from "@noble/curves/p256";
 import { DLEQ } from "../src/dleq"
 import { G1, G2, Hx, Hy, theCurveN } from "../src/params";
 import { bigIntFromUint8Array, getRandomBigInt } from "../src/util";
-import { sha3_256 } from "@noble/hashes/sha3";
-import { Point } from "../src/types";
 
 test('DLEQ::new', () => {
   const priv = p256.utils.randomPrivateKey();
@@ -27,7 +25,6 @@ test('DLEQ::verify', () => {
   const w = getRandomBigInt(theCurveN);
   const dleq = new DLEQ(G1, null, G2, null, w, d);
   const { c, r } = dleq.challengeAndResponse();
-  const hasher = sha3_256.create();
   const ok = DLEQ.verify(dleq.G1, dleq.H1, dleq.G2, dleq.H2, c, r)
   expect(ok).toBeTruthy();
 });
@@ -42,7 +39,6 @@ test('DLEQ::hash', () => {
 
 test('DLEQ::hashMod', () => {
   const expected = BigInt("5404410")
-  const hasher = sha3_256.create();
   const actual = DLEQ.hashMod(BigInt("10333301"), BigInt("10333301"), BigInt("10333301"), BigInt("10333301"))
   expect(actual).toEqual(expected)
 });

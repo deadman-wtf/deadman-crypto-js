@@ -1,5 +1,10 @@
 import { p256 } from "@noble/curves/p256";
 
+export interface IPoint {
+  x: bigint, 
+  y: bigint
+}
+
 // Define a Point class for better type safety and utility methods
 export class Point {
     x: bigint;
@@ -10,7 +15,7 @@ export class Point {
         this.y = y;
     }
 
-    static fromNoble(point: any): Point {
+    static fromNoble(point: IPoint): Point {
         return new Point(BigInt(point.x), BigInt(point.y));
     }
 
