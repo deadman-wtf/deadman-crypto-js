@@ -1,9 +1,10 @@
 import { p256 } from '@noble/curves/p256';
 import { sha256 } from '@noble/hashes/sha256';
-import { randomBytes } from '@noble/hashes/utils';
+import { Hash, randomBytes } from '@noble/hashes/utils';
 import { DistributionSharesBox, Point } from './types';
 import { Hx, Hy, theCurve, theCurveN } from './params';
-import { sha3_256 } from '@noble/hashes/sha3';
+import { Keccak, sha3_256 } from '@noble/hashes/sha3';
+import { bigIntToBytes } from './util';
 
 // DLEQ class implementing the protocol
 export class DLEQ {
@@ -15,7 +16,7 @@ export class DLEQ {
     alpha: bigint;
     r: bigint | null;
 
-    constructor(G1: Point, G2: Point, w: bigint, alpha: bigint) {
+    constructor(G1: Point, H1: Point, G2: Point, H2: Point, w: bigint, alpha: bigint) {
         const n = theCurveN;
 
         if (w <= 0n || w >= n) throw new Error('w must be in the range 0 < w < curveN');
@@ -36,10 +37,18 @@ export class DLEQ {
         return num.toString(16).padStart(64, '0');
     }
 
-    static hash(...inputs: bigint[]): bigint {
-        const inputHex = inputs.map(DLEQ.toHex).join('');
-        const hashOutput = sha256(new TextEncoder().encode(inputHex));
-        return BigInt('0x' + Buffer.from(hashOutput).toString('hex'));
+    static hash(...inputs: bigint[]): Uint8Array {
+        const hasher = sha3_256.create();
+        for (let input of inputs) {
+          hasher.update(bigIntToBytes(input));
+        }
+        return hasher.digest();
+    }
+
+    static hashMod(n: bigint, ...values: bigint[]) {
+      const hash256 = DLEQ.hash(...values);
+      let h = BigInt("0x" + Buffer.from(hash256).toString('hex'));
+      return h % n;
     }
 
     static response(w: bigint, alpha: bigint, c: bigint, n: bigint): bigint {
@@ -49,14 +58,15 @@ export class DLEQ {
     }
 
     challengeAndResponse(): { c: bigint, r: bigint } {
-        const n = p256.CURVE.n;
+        const n = theCurveN;
 
         // A1 := w·G1 , A2 := w·G2
         const A1 = this.G1.multiply(this.w);
         const A2 = this.G2.multiply(this.w);
 
         // c := Hash(H1,H2,A1,A2) mod n
-        const c = DLEQ.hash(this.H1.x, this.H1.y, this.H2.x, this.H2.y, A1.x, A1.y, A2.x, A2.y) % n;
+        const hasher = sha3_256.create();
+        const c = DLEQ.hashMod(this.H1.x, this.H1.y, this.H2.x, this.H2.y, A1.x, A1.y, A2.x, A2.y);
 
         if (c <= 0n || c >= n) throw new Error('c must be in the range 0 < c < n');
 
@@ -67,7 +77,7 @@ export class DLEQ {
     }
 
     static verify(G1: Point, H1: Point, G2: Point, H2: Point, c: bigint, r: bigint): boolean {
-        const n = p256.CURVE.n;
+        const n = theCurveN;
 
         if (c <= 0n || c >= n) throw new Error('c must be in the range 0 < c < n');
         if (r <= 0n || r >= n) throw new Error('r must be in the range 0 < r < n');
@@ -79,7 +89,7 @@ export class DLEQ {
         const A2 = G2.multiply(r).add(H2.multiply(c));
 
         // Calculate the local challenge
-        const localChallenge = DLEQ.hash(H1.x, H1.y, H2.x, H2.y, A1.x, A1.y, A2.x, A2.y) % n;
+        const localChallenge = DLEQ.hashMod(H1.x, H1.y, H2.x, H2.y, A1.x, A1.y, A2.x, A2.y);
 
         return localChallenge === c;
     }
